@@ -18,7 +18,6 @@ connectDB()
     console.log("MONGO DB connecttin Failed !!", err);
   });
 
-
 /*
 import mongoose from "mongoose";
 import { DB_NAME } from "./constant";
