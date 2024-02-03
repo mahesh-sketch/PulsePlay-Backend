@@ -24,11 +24,7 @@ const registerUser = asyncHandler(async (req, res) => {
   //password Validation
   const passRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-
-  console.log(password);
   if (!passRegex.test(password.trim())) {
-    console.log(passRegex.test(password.trim()));
-    console.log("Validation Failed");
     throw new ApiError(
       400,
       "Password must be Minimum eight and maximum 10 characters, at least one uppercase letter, one lowercase letter, one number and one special character"
