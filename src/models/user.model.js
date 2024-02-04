@@ -76,7 +76,7 @@ userSchema.methods.generateAccessToken = function () {
   return generateToken;
 };
 
-userSchema.methods.generateRefreshToken = async function () {
+userSchema.methods.generateRefreshToken = function () {
   const payload = {
     _id: this._id,
   };
