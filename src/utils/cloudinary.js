@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
+import ApiError from "./ApiError.js";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
@@ -24,4 +25,23 @@ const uploadOnCloudinary = async (localFilePath, folderName) => {
   }
 };
 
-export default uploadOnCloudinary;
+const deleteOncloudinary = async (publicId) => {
+  try {
+    if (!publicId || publicId.length === 0) return "public id not provided";
+    const deleteImageResponse = await cloudinary.api.delete_resources(
+      publicId,
+      {
+        type: "upload",
+        resource_type: "image",
+      }
+    );
+    return deleteImageResponse;
+  } catch (error) {
+    throw new ApiError(400, error?.message || "Error in deleting file");
+  }
+};
+const cloudinaryMethod = {
+  uploadOnCloudinary,
+  deleteOncloudinary,
+};
+export default cloudinaryMethod;
