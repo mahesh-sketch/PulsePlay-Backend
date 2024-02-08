@@ -309,9 +309,6 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!avatar.url) {
     throw new ApiError(400, "Error while uploading");
   }
-  if (avatarLocalPath && fs.existsSync(avatarLocalPath)) {
-    fs.unlinkSync(avatarLocalPath);
-  }
   await User.findByIdAndUpdate(
     req.user?._id,
     {
@@ -376,9 +373,9 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 });
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
-  const username = req.params;
+  const { username } = req.params;
 
-  if (!username?.trim()) {
+  if (!username?.trim() || !username) {
     throw new ApiError(400, "User is Missing");
   }
   const channel = await User.aggregate([
@@ -433,6 +430,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
       },
     },
   ]);
+  console.log(channel);
   if (!channel?.length) {
     throw new ApiError(404, "Channel doesnot exists");
   }
@@ -457,12 +455,13 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         foreignField: "_id",
         as: "watchHistory",
         pipeline: [
+          //this is a nested pipline to find out user data in videos model
           {
             $lookup: {
               from: "users",
               localField: "owner",
               foreignField: "_id",
-              as: "owner",
+              as: "owner", //now again use sub-pipline, coz owner have all fields of users so minus some field
               pipeline: [
                 {
                   $project: {
@@ -484,7 +483,17 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         ],
       },
     },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        watchHistory: 1,
+      },
+    },
   ]);
+  if (!user?.length) {
+    throw new ApiErrorHandler(404, "watch history not found");
+  }
 
   return res
     .status(200)
