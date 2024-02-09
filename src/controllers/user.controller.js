@@ -155,8 +155,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(req.user._id, {
-    $set: {
-      refreshToken: undefined,
+    $unset: {
+      refreshToken: 1,
     },
   });
 
@@ -442,9 +442,13 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
+  // in mongoose when we wrote req.user._id it provide us the mongoDB ID in a string
+  // but in aggregate we need to convert orignal objecId into normal string
+  // coz in aggregate we can't use mongoose
   const user = await User.aggregate([
     {
       $match: {
+        // like this , now we get the user ID
         _id: new mongoose.Types.ObjectId(req.user?._id),
       },
     },
@@ -455,15 +459,16 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         foreignField: "_id",
         as: "watchHistory",
         pipeline: [
-          //this is a nested pipline to find out user data in videos model
+          // this is a nested pipline to find out user data in videos model
           {
             $lookup: {
               from: "users",
               localField: "owner",
               foreignField: "_id",
-              as: "owner", //now again use sub-pipline, coz owner have all fields of users so minus some field
+              as: "owner", // now again use sub-pipline, coz owner have all fields of users so minus some field
               pipeline: [
                 {
+                  // now this all data is present in owner field, instead of in main video docs
                   $project: {
                     fullName: 1,
                     username: 1,
@@ -474,7 +479,9 @@ const getWatchHistory = asyncHandler(async (req, res) => {
             },
           },
           {
+            // now data in Owner field but in form of array and we need [0] value, so just formate it in good way
             $addFields: {
+              // now get the data from owner field at first position
               owner: {
                 $first: "$owner",
               },
@@ -483,27 +490,54 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         ],
       },
     },
-    {
-      $project: {
-        fullName: 1,
-        username: 1,
-        watchHistory: 1,
-      },
-    },
   ]);
   if (!user?.length) {
-    throw new ApiErrorHandler(404, "watch history not found");
+    throw new ApiError(404, "watch history not found");
   }
-
+  // console.log("User: ", user[0].watchHistory);
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
         user[0].watchHistory,
-        "Watch History Fetched Successfully"
+        "watch history fetched successfully"
       )
     );
+});
+
+const addtoWatchHistory = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  if (!req.user?._id) {
+    throw new ApiError(400, "Invaild User Id");
+  }
+  if (!videoId) {
+    throw new ApiError(404, "Invaild Video Id");
+  }
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $addToSet: {
+          watchHistory: videoId,
+        },
+      },
+      { new: true }
+    ).select("-password -refreshToken");
+    if (!user) {
+      throw new ApiError(404, "watch history user's not added");
+    }
+    console.log(user);
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user, "Video added to watch history"));
+  } catch (error) {
+    throw new ApiError(
+      error?.statusCode || 500,
+      error?.message ||
+        "internal server error while tracking user's watch history"
+    );
+  }
 });
 
 const userController = {
@@ -518,5 +552,6 @@ const userController = {
   updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
+  addtoWatchHistory,
 };
 export default userController;
