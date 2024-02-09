@@ -1,3 +1,4 @@
+![Logo](https://socialify.git.ci/mahesh-sketch/PulsePlay-Backend/image?font=Inter&language=1&name=1&pattern=Solid&theme=Dark)
 
 # PulsePlay Backend
 
