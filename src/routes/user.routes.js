@@ -56,4 +56,8 @@ userRouter
   .route("/watch-history")
   .get(verifyJwt, userController.getWatchHistory);
 
+userRouter
+  .route("/add-to-watch-history/:videoId")
+  .post(verifyJwt, userController.addtoWatchHistory);
+
 export default userRouter;
