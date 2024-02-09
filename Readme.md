@@ -18,7 +18,7 @@ PulsePlay is a comprehensive video hosting platform designed and developed using
 
 - Actively involved in ongoing project for Continuous Improvement. PulsePlay strives to remain at the forefront of video hosting platforms, providing a cutting-edge experience for users.
 
-- After successfully completing the backend development, the next phase of the StreamHub project involves the integration of a frontend using React. This frontend will complement the robust backend, creating a seamless and visually appealing user interface.
+- After successfully completing the backend development, the next phase of the PulsePlay project involves the integration of a frontend using React. This frontend will complement the robust backend, creating a seamless and visually appealing user interface.
 
 ## 🚀 Deployment
 
