@@ -3,9 +3,9 @@ import userController from "../controllers/user.controller.js";
 import upload from "../middlewares/multer.middleware.js";
 import verifyJwt from "../middlewares/auth.middleware.js";
 
-const userRouter = Router();
+const router = Router();
 
-userRouter.route("/register").post(
+router.route("/register").post(
   upload.fields([
     {
       name: "avatar",
@@ -18,29 +18,29 @@ userRouter.route("/register").post(
   ]),
   userController.registerUser
 );
-userRouter.route("/login").post(userController.loginUser);
+router.route("/login").post(userController.loginUser);
 
 //secured routes
-userRouter.route("/logout").post(verifyJwt, userController.logoutUser);
-userRouter.route("/refresh-token").post(userController.refreshAccessToken);
+router.route("/logout").post(verifyJwt, userController.logoutUser);
+router.route("/refresh-token").post(userController.refreshAccessToken);
 
-userRouter
+router
   .route("/change-password")
   .post(verifyJwt, upload.none(), userController.changeCurrentPassword);
 
-userRouter
+router
   .route("/get-current-user")
   .get(verifyJwt, userController.getCurrentUser);
 
-userRouter
+router
   .route("/update-account-details")
   .post(verifyJwt, upload.none(), userController.updateAccountDetails);
 
-userRouter
+router
   .route("/update-user-avatar")
   .patch(verifyJwt, upload.single("avatar"), userController.updateUserAvatar);
 
-userRouter
+router
   .route("/update-cover-image")
   .patch(
     verifyJwt,
@@ -48,16 +48,16 @@ userRouter
     userController.updateUserCoverImage
   );
 
-userRouter
+router
   .route("/c/:username")
   .get(verifyJwt, userController.getUserChannelProfile);
 
-userRouter
+router
   .route("/watch-history")
   .get(verifyJwt, userController.getWatchHistory);
 
-userRouter
+router
   .route("/add-to-watch-history/:videoId")
   .post(verifyJwt, userController.addtoWatchHistory);
 
-export default userRouter;
+export default router;
