@@ -466,32 +466,22 @@ const getWatchHistory = asyncHandler(async (req, res) => {
               localField: "owner",
               foreignField: "_id",
               as: "owner", // now again use sub-pipline, coz owner have all fields of users so minus some field
-              pipeline: [
-                {
-                  // now this all data is present in owner field, instead of in main video docs
-                  $project: {
-                    fullName: 1,
-                    username: 1,
-                    avatar: 1,
-                  },
-                },
-              ],
             },
           },
           {
-            // now data in Owner field but in form of array and we need [0] value, so just formate it in good way
-            $addFields: {
-              // now get the data from owner field at first position
-              owner: {
-                $first: "$owner",
-              },
+            $unwind: "$owner",
+          },
+          {
+            $project: {
+              username: "$owner.username",
+              avatar: "$owner.avatar",
             },
           },
         ],
       },
     },
   ]);
-  if (!user?.length) {
+  if (!user?.length || user.length > 0) {
     throw new ApiError(404, "watch history not found");
   }
   // console.log("User: ", user[0].watchHistory);
@@ -523,7 +513,7 @@ const addtoWatchHistory = asyncHandler(async (req, res) => {
         },
       },
       { new: true }
-    ).select("-password -refreshToken");
+    ).select("-password -refreshToken -avatarImgId -coverImgId");
     if (!user) {
       throw new ApiError(404, "watch history user's not added");
     }
