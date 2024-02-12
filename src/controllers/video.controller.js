@@ -1,88 +1,10 @@
 import { mongoose, isValidObjectId } from "mongoose";
 import Video from "../models/video.model.js";
-import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import cloudinaryMethod from "../utils/cloudinary.js";
 import fs from "fs";
-
-const publishAVideo = asyncHandler(async (req, res) => {
-  const { title, description } = req.body;
-
-  try {
-    //check for user there or not
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      throw new ApiError(200, "User Not Found");
-    }
-    if (!title) {
-      throw new ApiError(400, "Title required");
-    }
-    if (!description) {
-      throw new ApiError(400, "Description required");
-    }
-    //File checking for uploading
-    const videoFileLocalPath = req.files?.videoFile[0]?.path;
-    const thumbnailLocalPath = req.files?.thumbnail[0]?.path;
-
-    console.log(videoFileLocalPath, thumbnailLocalPath);
-
-    if (!videoFileLocalPath) {
-      throw new ApiError(400, "Video File Required");
-    }
-    if (!thumbnailLocalPath) {
-      throw new ApiError(400, "Thumbnail File required");
-    }
-
-    const uploadVideoFile = await cloudinaryMethod.uploadOnCloudinary(
-      videoFileLocalPath,
-      "Video UploadFile"
-    );
-    console.log(uploadVideoFile);
-    if (!uploadVideoFile) {
-      throw new ApiError(400, "Problem occurers in upload video file");
-    }
-
-    const uploadthumbnail = await cloudinaryMethod.uploadOnCloudinary(
-      thumbnailLocalPath,
-      "Video Thumbnail"
-    );
-    console.log(uploadVideoFile, uploadthumbnail);
-
-    if (!uploadthumbnail) {
-      throw new ApiError(400, "Problem occurers in upload thumbnail file");
-    }
-
-    //Assume if duration is in string format
-    const duration =
-      typeof uploadVideoFile.duration === "string"
-        ? parseFloat(uploadVideoFile.duration)
-        : uploadVideoFile.duration;
-    console.log(duration);
-    const video = await Video.create({
-      videoFile: uploadVideoFile.url,
-      thumbnail: uploadthumbnail.url,
-      title: title,
-      description: description,
-      duration: duration,
-      owner: new mongoose.Types.ObjectId(req.user?._id),
-      videoPublicId: uploadVideoFile?.public_id,
-      thumbnailPublicId: uploadthumbnail?.public_id,
-    });
-    console.log(video);
-    return res
-      .status(200)
-      .json(new ApiResponse(200, video, "Video Upload Successfully"));
-  } catch (error) {
-    console.log("error while uploading the video or thumbnail endpoint", error);
-
-    throw new ApiError(
-      error.statusCode || 500,
-      error?.message || "internal server error upload video"
-    );
-  }
-});
 
 const uploadVideo = asyncHandler(async (req, res) => {
   let localVideoPath;
@@ -197,7 +119,6 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
 const videoController = {
   getAllVideos,
-  publishAVideo,
   getVideoById,
   updateVideo,
   deleteVideo,
