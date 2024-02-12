@@ -95,9 +95,65 @@ const uploadVideo = asyncHandler(async (req, res) => {
 });
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-  //TODO: get all videos based on query, sort, pagination
+  try {
+    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+
+    if (!sortBy && !sortType && query) {
+      throw new ApiError("SortBy, SortType, and Query are all required!!!");
+    }
+
+    const pipeline = [
+      {
+        $match: {
+          $or: [
+            { title: { $regex: new RegExp(query, "si") } },
+            { description: { $regex: new RegExp(query, "si") } },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "videoOwner",
+        },
+      },
+      {
+        $unwind: "$videoOwner",
+      },
+      {
+        $project: {
+          username: "$videoOwner.username",
+          avatar: "$videoOwner.avatar",
+        },
+      },
+      {
+        $sort: {
+          sortBy: sortType === "asc" ? 1 : -1,
+        },
+      },
+    ];
+
+    const getAllvideoPipeline = await Video.aggregate(pipeline);
+
+    if (!getAllvideoPipeline || getAllvideoPipeline.length === 0) {
+      throw new ApiError(400, "No videos found");
+    }
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, getAllvideoPipeline, "Videos fetched successfully")
+      );
+  } catch (error) {
+    console.error("Error:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error?.message || "Internal server error"
+    );
+  }
 });
+
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   //TODO: get video by id
