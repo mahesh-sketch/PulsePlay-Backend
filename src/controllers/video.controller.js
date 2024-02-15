@@ -5,6 +5,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import cloudinaryMethod from "../utils/cloudinary.js";
 import fs from "fs";
+import User from "../models/user.model.js";
 
 const uploadVideo = asyncHandler(async (req, res) => {
   let localVideoPath;
@@ -155,13 +156,107 @@ const getAllVideos = asyncHandler(async (req, res) => {
 });
 
 const getVideoById = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
-  //TODO: get video by id
+  try {
+    const { videoId } = req.params;
+
+    if (!mongoose.isValidObjectId(videoId)) {
+      throw new ApiError(400, "Invaild ID please Provide Vaild ID");
+    }
+    if (!req.user._id) {
+      throw new ApiError(400, "User Not Found");
+    }
+    if (!videoId) {
+      throw new ApiError(400, "Video Id Required");
+    }
+
+    const videoById = await Video.findById(videoId).select(
+      "-VideoPublicId -ThumbNailPublicId -_id"
+    );
+    return res
+      .status(200)
+      .json(200, new ApiResponse(200, videoById, "Video Fetched Successfully"));
+  } catch (error) {
+    console.error("Error:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error?.message || "Internal server error"
+    );
+  }
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
-  //TODO: update video details like title, description, thumbnail
+  try {
+    const { videoId } = req.params;
+    const { title, description } = req.body;
+
+    if (!videoId) {
+      throw new ApiError(400, "Video Id Required");
+    }
+
+    if (!mongoose.isValidObjectId(videoId)) {
+      throw new ApiError(400, "Invaild ID please Provide Vaild ID");
+    }
+
+    if (!title || !description) {
+      throw new ApiError(400, "Title or Desc Required");
+    }
+    if (!req.file || Object.keys(req.file).length === 0) {
+      throw new ApiError(401, "please upload the thumbnail");
+    }
+    const thumbnailPath = req.file?.path;
+
+    if (!thumbnailPath) {
+      throw new ApiError(401, "thumbnail file is missing");
+    }
+
+    const video = await Video.findById(videoId);
+    if (!video.owner || !video.owner.equals(req.user._id)) {
+      throw new ApiError(404, "User not found");
+    }
+
+    const deletedThumbnail = await cloudinaryMethod.deleteOncloudinary(
+      video.ThumbNailPublicId
+    );
+
+    if (!deletedThumbnail) {
+      throw new ApiError(
+        400,
+        "Error deleting in oldthumbnail file from cloudinary"
+      );
+    }
+
+    const newThumbnail = await cloudinaryMethod.uploadOnCloudinary(
+      thumbnailPath,
+      "Thumbnail File"
+    );
+
+    if (!newThumbnail || !newThumbnail.url) {
+      throw new ApiError(400, "Error while uploading new Thumbnail");
+    }
+
+    await Video.findByIdAndUpdate(
+      videoId,
+      {
+        $set: {
+          title: title,
+          description: description,
+          thumbNail: newThumbnail.url,
+          ThumbNailPublicId: newThumbnail.public_id,
+        },
+      },
+      { new: true }
+    ).select("-ThumbNailPublicId -VideoPublicId ");
+
+    return res
+      .status(200)
+      .json(200, new ApiResponse(200, "Update Successfully"));
+  } catch (error) {
+    console.error("Error:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error?.message || "Internal server error"
+    );
+  }
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
