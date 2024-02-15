@@ -4,7 +4,6 @@ import verifyJWT from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/multer.middleware.js";
 
 const router = Router();
-// router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
 
 router.route("/").get(verifyJWT, videoController.getAllVideos);
 
@@ -24,12 +23,14 @@ router.route("/upload-video").post(
 );
 
 router
+  .use(verifyJWT)
   .route("/:videoId")
   .get(videoController.getVideoById)
   .delete(videoController.deleteVideo)
-  .patch(upload.single("thumbnail"), videoController.updateVideo);
+  .patch(upload.single("thumbNail"), videoController.updateVideo);
 
 router
+  .use(verifyJWT)
   .route("/toggle/publish/:videoId")
   .patch(videoController.togglePublishStatus);
 
