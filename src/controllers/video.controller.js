@@ -5,7 +5,6 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import cloudinaryMethod from "../utils/cloudinary.js";
 import fs from "fs";
-import User from "../models/user.model.js";
 
 const uploadVideo = asyncHandler(async (req, res) => {
   let localVideoPath;
@@ -172,6 +171,9 @@ const getVideoById = asyncHandler(async (req, res) => {
     const videoById = await Video.findById(videoId).select(
       "-VideoPublicId -ThumbNailPublicId -_id"
     );
+    if (!videoById) {
+      throw new ApiError(400, "Video Not found");
+    }
     return res
       .status(200)
       .json(200, new ApiResponse(200, videoById, "Video Fetched Successfully"));
@@ -260,12 +262,99 @@ const updateVideo = asyncHandler(async (req, res) => {
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
-  //TODO: delete video
+  try {
+    const { videoId } = req.params;
+
+    if (!req.user?._id) {
+      throw new ApiError(400, "User not Exist");
+    }
+    if (!videoId) {
+      throw new ApiError(400, "Please provide videoId");
+    }
+    if (!mongoose.isValidObjectId(videoId)) {
+      throw new ApiError(400, "Please provide Valid Video ID");
+    }
+
+    const video = await Video.findById(videoId);
+    const thumbanilpublicId = video.ThumbNailPublicId;
+    const videopublicId = video.VideoPublicId;
+
+    const deletedVideoFromCloudinary =
+      await cloudinaryMethod.deleteOncloudinary(videopublicId, "video");
+
+    const deletedThumbnailFromCloudinary =
+      await cloudinaryMethod.deleteOncloudinary(thumbanilpublicId);
+
+    if (!deletedThumbnailFromCloudinary) {
+      throw new ApiError(400, "Error in deleted Thumbnail from cloudinary");
+    }
+    if (!deletedVideoFromCloudinary) {
+      throw new ApiError(400, "Error in deleted Video from cloudinary");
+    }
+
+    const deleted = await Video.deleteOne({ _id: videoId });
+
+    return res
+      .status(200)
+      .json(200, new ApiResponse(200, deleted, "Video Deleted Successfully"));
+  } catch (error) {
+    console.error("Error:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error?.message || "Internal server error"
+    );
+  }
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+
+  if (!req.user?._id) {
+    throw new ApiError(400, "User not Exist");
+  }
+  if (!videoId) {
+    throw new ApiError(400, "Please provide videoId");
+  }
+  if (!mongoose.isValidObjectId(videoId)) {
+    throw new ApiError(400, "Please provide Valid Video ID");
+  }
+
+  const togglePublishAggregatePipeline = [
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(videoId),
+      },
+    },
+    {
+      $set: {
+        PublishedId: {
+          $cond: {
+            if: { $eq: ["$isPublished", true] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        owner: 1,
+        PublishedId: 1,
+        title: 1,
+      },
+    },
+  ];
+
+  const updatedVideo = await Video.aggregate(togglePublishAggregatePipeline);
+
+  if (!updatedVideo) {
+    throw new ApiError(400, "Video not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedVideo, "Video updated successfully"));
 });
 
 const videoController = {
