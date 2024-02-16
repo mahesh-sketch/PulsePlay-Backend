@@ -24,7 +24,7 @@ const uploadOnCloudinary = async (localFilePath, subFolderName) => {
       console.error("Cloudinary upload failed:", response);
       return null;
     }
-    
+
     //file has been uploaded successfully
     console.log("File is uploaded on cloudinary: ", response.url);
     return response;
@@ -34,14 +34,14 @@ const uploadOnCloudinary = async (localFilePath, subFolderName) => {
   }
 };
 
-const deleteOncloudinary = async (publicId) => {
+const deleteOncloudinary = async (publicId, resource = "image") => {
   try {
     if (!publicId || publicId.length === 0) return "public id not provided";
     const deleteImageResponse = await cloudinary.api.delete_resources(
       publicId,
       {
         type: "upload",
-        resource_type: "image",
+        resource_type: resource,
       }
     );
     return deleteImageResponse;
