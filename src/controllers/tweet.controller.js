@@ -28,7 +28,7 @@ const createTweet = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(200, new ApiResponse(200, tweet, "Tweet Created Successfully"));
+      .json(new ApiResponse(200, tweet, "Tweet Created Successfully"));
   } catch (error) {
     console.error("Error:", error);
     throw new ApiError(
@@ -62,10 +62,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(
-        200,
-        new ApiResponse(200, findUserTweet, "Tweet Fetched Successfully")
-      );
+      .json(new ApiResponse(200, findUserTweet, "Tweet Fetched Successfully"));
   } catch (error) {
     console.error("Error:", error);
     throw new ApiError(
@@ -114,10 +111,7 @@ const updateTweet = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(
-        200,
-        new ApiResponse(200, updateTweets, "Tweet Updated Successfully")
-      );
+      .json(new ApiResponse(200, updateTweets, "Tweet Updated Successfully"));
   } catch (error) {
     console.error("Error:", error);
     throw new ApiError(
@@ -146,10 +140,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
     const deletedTweet = await Tweet.deleteOne({ _id: tweetId });
     return res
       .status(200)
-      .json(
-        200,
-        new ApiResponse(200, deletedTweet, "Tweet Deleted Successfully")
-      );
+      .json(new ApiResponse(200, deletedTweet, "Tweet Deleted Successfully"));
   } catch (error) {
     console.error("Error:", error);
     throw new ApiError(
