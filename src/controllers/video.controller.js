@@ -176,7 +176,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     }
     return res
       .status(200)
-      .json(200, new ApiResponse(200, videoById, "Video Fetched Successfully"));
+      .json(new ApiResponse(200, videoById, "Video Fetched Successfully"));
   } catch (error) {
     console.error("Error:", error);
     throw new ApiError(
@@ -249,9 +249,7 @@ const updateVideo = asyncHandler(async (req, res) => {
       { new: true }
     ).select("-ThumbNailPublicId -VideoPublicId ");
 
-    return res
-      .status(200)
-      .json(200, new ApiResponse(200, "Update Successfully"));
+    return res.status(200).json(new ApiResponse(200, "Update Successfully"));
   } catch (error) {
     console.error("Error:", error);
     throw new ApiError(
@@ -296,7 +294,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(200, new ApiResponse(200, deleted, "Video Deleted Successfully"));
+      .json(new ApiResponse(200, deleted, "Video Deleted Successfully"));
   } catch (error) {
     console.error("Error:", error);
     throw new ApiError(
