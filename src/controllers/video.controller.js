@@ -305,54 +305,62 @@ const deleteVideo = asyncHandler(async (req, res) => {
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
+  try {
+    const { videoId } = req.params;
 
-  if (!req.user?._id) {
-    throw new ApiError(400, "User not Exist");
-  }
-  if (!videoId) {
-    throw new ApiError(400, "Please provide videoId");
-  }
-  if (!mongoose.isValidObjectId(videoId)) {
-    throw new ApiError(400, "Please provide Valid Video ID");
-  }
+    if (!req.user?._id) {
+      throw new ApiError(400, "User not Exist");
+    }
+    if (!videoId) {
+      throw new ApiError(400, "Please provide videoId");
+    }
+    if (!mongoose.isValidObjectId(videoId)) {
+      throw new ApiError(400, "Please provide Valid Video ID");
+    }
 
-  const togglePublishAggregatePipeline = [
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(videoId),
+    const togglePublishAggregatePipeline = [
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(videoId),
+        },
       },
-    },
-    {
-      $set: {
-        PublishedId: {
-          $cond: {
-            if: { $eq: ["$isPublished", true] },
-            then: true,
-            else: false,
+      {
+        $set: {
+          PublishedId: {
+            $cond: {
+              if: { $eq: ["$isPublished", true] },
+              then: true,
+              else: false,
+            },
           },
         },
       },
-    },
-    {
-      $project: {
-        _id: 1,
-        owner: 1,
-        PublishedId: 1,
-        title: 1,
+      {
+        $project: {
+          _id: 1,
+          owner: 1,
+          PublishedId: 1,
+          title: 1,
+        },
       },
-    },
-  ];
+    ];
 
-  const updatedVideo = await Video.aggregate(togglePublishAggregatePipeline);
+    const updatedVideo = await Video.aggregate(togglePublishAggregatePipeline);
 
-  if (!updatedVideo) {
-    throw new ApiError(400, "Video not found");
+    if (!updatedVideo) {
+      throw new ApiError(400, "Video not found");
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updatedVideo, "Video updated successfully"));
+  } catch (error) {
+    console.error("Error:", error);
+    throw new ApiError(
+      error.statusCode || 500,
+      error?.message || "Internal server error"
+    );
   }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, updatedVideo, "Video updated successfully"));
 });
 
 const videoController = {
