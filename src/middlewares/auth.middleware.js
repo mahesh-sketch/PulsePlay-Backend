@@ -24,6 +24,8 @@ const verifyJwt = asyncHandler(async (req, res, next) => {
     next();
   } catch (error) {
     throw new ApiError(401, error?.message || "Invaild Access Token");
+  } finally {
+    console.log("Enter in to Finally Block");
   }
 });
 
