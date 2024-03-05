@@ -36,36 +36,44 @@ const registerUser = asyncHandler(async (req, res) => {
         (field) => field?.trim() === ""
       )
     ) {
-      throw new ApiError(400, "All Fields are required");
+      return res.status(401).json({
+        message: "All Fields are required",
+      });
     }
 
     //email Validation
     const emailRegex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+.[a-zA-Z0-9-.]+$/;
     if (!emailRegex.test(email)) {
-      throw new ApiError(400, "Invalid email format");
+      return res.status(401).json({
+        message: "Invaild Email Format",
+      });
     }
 
     //password Validation
     const passRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passRegex.test(password.trim())) {
-      throw new ApiError(
-        400,
-        "Password must be Minimum eight and maximum 10 characters, at least one uppercase letter, one lowercase letter, one number and one special character"
-      );
+      return res.status(401).json({
+        message:
+          "Password must be Minimum eight and maximum 10 characters, at least one uppercase letter, one lowercase letter, one number and one special character",
+      });
     }
 
     //Check user is existed or not by querying to Database
     const existerUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existerUser) {
-      throw new ApiError(409, "User With Email or Username already Exists");
+      return res.status(401).json({
+        message: "User With Email or Username already Exists",
+      });
     }
 
     //Take the avatar and coverimage file path from req and check
     const avatarLocalPath = req.files?.avatar[0]?.path;
     const coverImageLocalPath = req.files?.coverImage[0]?.path;
     if (!avatarLocalPath) {
-      throw new ApiError(400, "Avatar is Required");
+      return res.status(401).json({
+        message: "required",
+      });
     }
     const avatar = await cloudinaryMethod.uploadOnCloudinary(
       avatarLocalPath,
@@ -77,7 +85,9 @@ const registerUser = asyncHandler(async (req, res) => {
     );
 
     if (!avatar) {
-      throw new ApiError(400, "Avatar File is Required");
+      return res.status(401).json({
+        message: "required",
+      });
     }
     //Create of user account to store the data in to database
     const user = await User.create({
@@ -94,20 +104,16 @@ const registerUser = asyncHandler(async (req, res) => {
       "-password -refreshToken"
     );
     if (!createdUser) {
-      throw new ApiError(
-        500,
-        "Something Went Wrong while Registering the user"
-      );
+      return res.status(500).json({
+        message: "Something went wrong",
+      });
     }
-    return res
-      .status(200)
-      .json(new ApiResponse(200, createdUser, "User Registered Successfully"));
+    return res.status(200).json({ message: "successfully" });
   } catch (error) {
     console.error("Error:", error);
-    throw new ApiError(
-      error.statusCode || 500,
-      error?.message || "Internal server error"
-    );
+    return res.status(500).json({
+      message: "Something went wrong",
+    });
   }
 });
 
