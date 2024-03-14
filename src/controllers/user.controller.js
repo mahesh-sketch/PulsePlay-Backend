@@ -72,7 +72,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const coverImageLocalPath = req.files?.coverImage[0]?.path;
     if (!avatarLocalPath) {
       return res.status(401).json({
-        message: "required",
+        message: "Avatar required",
       });
     }
     const avatar = await cloudinaryMethod.uploadOnCloudinary(
@@ -86,7 +86,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     if (!avatar) {
       return res.status(401).json({
-        message: "required",
+        message: "Avatar required",
       });
     }
     //Create of user account to store the data in to database
@@ -108,7 +108,7 @@ const registerUser = asyncHandler(async (req, res) => {
         message: "Something went wrong",
       });
     }
-    return res.status(200).json({ message: "successfully" });
+    return res.status(200).json({ message: "Account create Successfully" });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({
