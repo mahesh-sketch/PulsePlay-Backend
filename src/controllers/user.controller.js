@@ -28,11 +28,11 @@ const generateAccessAndRefreshTokens = async (userId) => {
 const registerUser = asyncHandler(async (req, res) => {
   //Take all the value from Frontend
   try {
-    const { username, email, fullName, password } = req.body;
+    const { username, email, fullname, password } = req.body;
 
     //Best way to check where there is empty field or not if empty then throw error
     if (
-      [username, email, fullName, password].some(
+      [username, email, fullname, password].some(
         (field) => field?.trim() === ""
       )
     ) {
@@ -68,8 +68,16 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     //Take the avatar and coverimage file path from req and check
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    const avatarLocalPath = req.files?.avatar?.[0]?.path;
+
+    const coverImageLocalPath =
+      req.files &&
+      req.files.coverImage &&
+      req.files.coverImage[0] &&
+      req.files.coverImage[0].path;
+
+    console.log(avatarLocalPath);
+
     if (!avatarLocalPath) {
       return res.status(401).json({
         message: "Avatar required",
@@ -79,6 +87,12 @@ const registerUser = asyncHandler(async (req, res) => {
       avatarLocalPath,
       "User Avatar"
     );
+    if (!avatar || !avatar.url) {
+      return res.status(401).json({
+        message: "Error uploading avatar",
+      });
+    }
+
     const coverImage = await cloudinaryMethod.uploadOnCloudinary(
       coverImageLocalPath,
       "User CoverImage"
@@ -89,16 +103,21 @@ const registerUser = asyncHandler(async (req, res) => {
         message: "Avatar required",
       });
     }
+    const avatarImgId = avatar?.public_id;
+    console.log(avatarImgId);
+    const coverImageId = coverImage?.public_id || "";
+    console.log(coverImageId);
+
     //Create of user account to store the data in to database
     const user = await User.create({
       username: username.toLowerCase(),
       email,
-      fullName,
+      fullName: fullname,
       avatar: avatar.url,
       coverImage: coverImage?.url || "",
       password,
-      avatarImgId: avatar.public_id,
-      coverImgId: coverImage.public_id,
+      avatarImgId,
+      coverImageId,
     });
     const createdUser = await User.findById(user._id).select(
       "-password -refreshToken"
