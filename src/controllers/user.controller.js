@@ -142,8 +142,16 @@ const loginUser = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
 
     //if both are not given by user
-    if (!username && !email) {
-      throw new ApiError(400, "Username or password Required");
+    if (!email) {
+      return res.status(401).json({
+        message: "Email Required",
+      });
+    }
+
+    if (!password) {
+      return res.status(401).json({
+        message: "Password Required",
+      });
     }
 
     //found the user from database
@@ -151,13 +159,17 @@ const loginUser = asyncHandler(async (req, res) => {
 
     //if user is not found
     if (!user) {
-      throw new ApiError(404, "User not found");
+      return res.status(401).json({
+        message: "User not found",
+      });
     }
 
     //password verify
     const isPasswordVaild = await user.isPasswordCorrect(password);
     if (!isPasswordVaild) {
-      throw new ApiError(401, "Invaild user Credentials");
+      return res.status(401).json({
+        message: "Invaild user Credentials",
+      });
     }
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
@@ -179,23 +191,14 @@ const loginUser = asyncHandler(async (req, res) => {
       .status(200)
       .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", refreshToken, options)
-      .json(
-        new ApiResponse(
-          200,
-          {
-            user: loggedUser,
-            accessToken,
-            refreshToken,
-          },
-          "User logged Successfully"
-        )
-      );
+      .json({
+        message: "Login Successfully",
+      });
   } catch (error) {
     console.error("Error:", error);
-    throw new ApiError(
-      error.statusCode || 500,
-      error?.message || "Internal server error"
-    );
+    return res.status(500).json({
+      message: "Something went wrong",
+    });
   }
 });
 
